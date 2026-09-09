@@ -1,6 +1,6 @@
 #include "particle.hpp"
 
-Particle::Particle(double m, std::array<double, 2> p = {0, 0}, std::array<double, 2> v = {0, 0})
+Particle::Particle(double m, std::array<double, 2> p, std::array<double, 2> v)
 : mass(mass), position(p), velocity(v) {}
 
 void Particle::updateParticle(const std::array<double, 2> force, const double dt) {
