@@ -12,7 +12,7 @@ class Particle{
     public:
         // constructor for single particle. takes mass, position, and velocity as arguments. default set to {0, 0} for velocity but not position
         // if position default set to {0, 0}, two particles can be created in the same place causing 0 separation and a zero division error for force calculated.
-        Particle(double m, std::array<double, 2>& p, std::array<double, 2>& v = {0, 0});    
+        Particle(const double m, const std::array<double, 2>& p, const std::array<double, 2>& v = {0, 0});    
 
         // simulation will call this every interval of time dt. this function calls the other update methods
         // effectively every dt, each particle's acceleration, velocity, and position are updated
