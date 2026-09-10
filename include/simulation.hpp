@@ -20,7 +20,7 @@ class Simulation{
         //   {{dx, dy}, {dx, dy}, {0, 0}}
         // }
 
-        std::vector<std::vector<std::array<double, 2>>> relativePositions;              
+        std::vector<std::vector<std::array<double, 2>>> relativePositionsMatrix;              
 
     public:
         Simulation(const int n, const double dt); 
