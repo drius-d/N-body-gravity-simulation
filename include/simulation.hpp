@@ -16,7 +16,8 @@ class Simulation{
         std::vector<std::unique_ptr<Particle>> particles;                                           // particles created on heap since n of particles unknown              
         
         // For 3 bodies, each particle needs to know the relative position to the other 2 bodies to calculate the force vectors on it, from Newton's Law of Gravitation.
-        // { {{0, 0}, {dx, dy}, {dx, dy}},
+        // { 
+        //   {{0, 0}, {dx, dy}, {dx, dy}},
         //   {{dx, dy}, {0, 0}, {dx, dy}},
         //   {{dx, dy}, {dx, dy}, {0, 0}}
         // }
@@ -27,4 +28,6 @@ class Simulation{
         Simulation(const int n, const double dt); 
 
         void updateSimulation();      // updates position map, forceMap, calls particle update methods
+
+        void printMatrix();
 };

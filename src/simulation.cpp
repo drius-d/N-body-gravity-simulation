@@ -138,3 +138,16 @@ void Simulation::updateSimulation(){
     }
 }
 
+void Simulation::printMatrix(){
+    std::cout << "{\n";
+    for (std::vector<std::array<double, 2>>& row : relativePositionsMatrix){
+        std::cout << "{ ";
+        for (std::array<double, 2>& position : row){
+            std::cout << "{";
+            std::cout << position[0] << ", " << position[1];
+            std::cout << "} ";
+        }
+        std::cout << "}\n";
+    }
+    std::cout << "}";
+}

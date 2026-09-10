@@ -5,8 +5,8 @@ Particle::Particle(const double m, const std::array<double, 2>& p, const std::ar
 
 void Particle::updateParticle(const std::array<double, 2>& force, const double dt) {
     updateAcceleration(force);
-    updateVelocity(force, dt);
-    updatePosition(force, dt);
+    updateVelocity(acceleration, dt);
+    updatePosition(velocity, dt);
 }
 
 void Particle::updateAcceleration(const std::array<double, 2>& force){
