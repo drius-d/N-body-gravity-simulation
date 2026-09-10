@@ -85,14 +85,14 @@ void Simulation::updateSimulation(){
         // (including its relative position with itself i.e. (0,0).
 
         std::vector<std::array<double, 2>> relativePositions;
-        std::array<const double, 2> ownPosition = (*particles[i]).getPosition();
+        std::array<double, 2> ownPosition = (*particles[i]).getPosition();
 
         for (int j = 0; j < numberOfParticles; j++){
 
             // calculates relative position between i-th particle and all particles in scope
             // and pushes it to relativePositions
 
-            std::array<const double, 2> otherPosition = (*particles[j]).getPosition();
+            std::array<double, 2> otherPosition = (*particles[j]).getPosition();
             std::array<double, 2> relativePosition;
             
             relativePosition[0] = otherPosition[0] - ownPosition[0];

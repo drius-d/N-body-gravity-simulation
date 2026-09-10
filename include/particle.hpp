@@ -32,7 +32,7 @@ class Particle{
 
         void updatePosition(const std::array<double, 2>& velocity, const double dt);
 
-        std::array<const double, 2> getPosition() const;
+        std::array<double, 2> getPosition() const;
 
         double getMass() const;
     };
