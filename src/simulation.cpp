@@ -1,10 +1,11 @@
 #include "simulation.hpp"
+#include <sstream>
+#include <string>
 #include <iostream>
 #include <limits>
 
 Simulation::Simulation(const int n, const double dt)
 : numberOfParticles(n), dt(dt) {
-
 
     // Loop runs for the number of particles selected and creates particles
 
@@ -20,12 +21,17 @@ Simulation::Simulation(const int n, const double dt)
         bool noVelocityInput = false;
         while (true){
 
+            std::string input;
+            std::getline(std::cin, input);
+
+            std::istringstream stream(input);
+
             // If can't read from buffer into mass and position, clears buffer and 
             // forces user to input again.
 
-            if (!(std::cin >> mass >> position[0] >> position[1])){
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            if (!(stream >> mass >> position[0] >> position[1])){
+                stream.clear();
+                stream.str("");
 
                 std::cout << "Please try again: ";
                 continue;
@@ -34,9 +40,9 @@ Simulation::Simulation(const int n, const double dt)
             // If can't read from buffer into velocity, clears buffer and moves on
             // since velocity is not required
 
-            if (!(std::cin >> velocity[0] >> velocity[1])){
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            if (!(stream >> velocity[0] >> velocity[1])){
+                stream.clear();
+                stream.str("");
                 
                 // lets simulation know whether it needs to pass velocity as an argument into the Particle constructor
                 noVelocityInput = true;     
@@ -44,7 +50,7 @@ Simulation::Simulation(const int n, const double dt)
 
             // In case buffer contains >6 entries, 
 
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            stream.str("");
 
             break;
         }
@@ -59,3 +65,5 @@ Simulation::Simulation(const int n, const double dt)
         }
     }
 }
+
+
