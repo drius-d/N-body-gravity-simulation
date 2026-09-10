@@ -31,6 +31,6 @@ std::array<double, 2> Particle::getPosition(){
     return position;
 }
 
-double Particle::getMass(){
+double Particle::getMass() const{
     return mass;
 }

@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <limits>
+#include <cmath>
 
 Simulation::Simulation(const int n, const double dt)
 : numberOfParticles(n), dt(dt) {
@@ -20,6 +21,9 @@ Simulation::Simulation(const int n, const double dt)
     
         bool noVelocityInput = false;
         while (true){
+
+            // Using istringstream instead because it fails
+            // when it tries to read the buffer while its empty unlike cin.
 
             std::string input;
             std::getline(std::cin, input);
@@ -66,4 +70,72 @@ Simulation::Simulation(const int n, const double dt)
     }
 }
 
+void Simulation::updateSimulation(){
+    
+    // clearing the matrix
+
+    relativePositionsMatrix.clear();
+
+
+    // Loops for number of particles
+
+    for (int i = 0; i < numberOfParticles; i++){
+
+        // defines a vector containing the i-th particle's relative positions with all particles
+        // (including its relative position with itself i.e. (0,0).
+
+        std::vector<std::array<double, 2>> relativePositions;
+        std::array<const double, 2> ownPosition = (*particles[i]).getPosition();
+
+        for (int j = 0; j < numberOfParticles; j++){
+
+            // calculates relative position between i-th particle and all particles in scope
+            // and pushes it to relativePositions
+
+            std::array<const double, 2> otherPosition = (*particles[j]).getPosition();
+            std::array<double, 2> relativePosition;
+            
+            relativePosition[0] = otherPosition[0] - ownPosition[0];
+            relativePosition[1] = otherPosition[1] - ownPosition[1];
+
+            relativePositions.push_back(relativePosition);
+        }
+
+        // creates matrix of positions. see include/simulation.hpp comments in class Simulation
+        // for an idea.
+
+        relativePositionsMatrix.push_back(relativePositions);
+    }
+
+    // Need to calculate a vector for NET force on each particle using relativePositionMap
+    // F = G Mm/r^2 or in component form:
+    // Fx = (k * x) / (x^2 + y^2)^(3/2), Fy = (k * y) / (x^2 + y^2)^(3/2)
+    // For each particle, calculate the force vectors, calculate a net force, then
+    // call particle update method 
+
+    for (int i = 0; i < numberOfParticles; i++){
+        Particle& currentParticle = (*particles[i]);
+        std::array<double, 2> netForce = {0, 0};
+        double massI = currentParticle.getMass();
+        
+        for (int j = 0; j < numberOfParticles; j++){
+            if (i == j){
+                continue;
+            }
+
+            const Particle& otherParticle = (*particles[j]);
+            double massJ = otherParticle.getMass();
+            double dx = relativePositionsMatrix[i][j][0];
+            double dy = relativePositionsMatrix[i][j][1];
+
+            double Fx = (G * massI * massJ * dx) / std::pow((dx*dx + dy*dy), 1.5);
+            double Fy = (G * massI * massJ * dy) / std::pow((dx*dx + dy*dy), 1.5);
+
+            netForce[0] += Fx;
+            netForce[1] += Fy;
+        }
+
+        currentParticle.updateParticle(netForce, dt);
+    }
+}
 
