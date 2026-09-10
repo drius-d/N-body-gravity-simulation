@@ -2,7 +2,6 @@
 #include <sstream>
 #include <string>
 #include <iostream>
-#include <limits>
 #include <cmath>
 
 Simulation::Simulation(const int n, const double dt)
