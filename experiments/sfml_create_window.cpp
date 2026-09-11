@@ -10,13 +10,17 @@ int main(){
 
     sf::RectangleShape rect;
 
-    sf::Vector2f rectanglePosition(600, 350);       // going to have to convert our position vectors into sf::Vector2f
+    sf::Vector2f rectanglePosition(600, 350);       // going to have to convert our position vectors into sf::Vector2f      
 
-    rect.setPosition(rectanglePosition);        
+    // probably set size proportional to mass so again need a function that takes the mass and spits out some appropriate size?. 
+    // mass proportional volume so m = kr^3 so double the mass should mean times (2)^1/3 radius. This assumes particles are same density. 
+    // k we can change to how we want
 
-    rect.setSize(sf::Vector2f (100, 100));         // probably set size proportional to mass so again need a function that takes the mass and spits out some appropriate size?. 
-                            // mass proportional volume so m = kr^3 so double the mass should mean times (2)^1/3 radius. This assumes particles are same density. 
-                            // k we can change to how we want
+    rect.setPosition(rectanglePosition);  
+    rect.setSize(sf::Vector2f (100, 100));    
+    
+    float xVelocity = 3;
+    float yVelocity = 3;
 
     while (window.isOpen()){
 
@@ -29,9 +33,28 @@ int main(){
                 window.close(); 
             }
         }
+
+        rectanglePosition.x += xVelocity;
+        rectanglePosition.y += yVelocity;
+
+        rect.setPosition(rectanglePosition);
+
         window.clear();
         window.draw(rect);
         window.display();
+
+        if (rectanglePosition.x + rect.getSize().x >= 1280){
+            xVelocity = -xVelocity;
+        }
+        if (rectanglePosition.x <= 0){
+            xVelocity = -xVelocity;
+        }
+        if (rectanglePosition.y + rect.getSize().y >= 720){
+            yVelocity = -yVelocity;
+        }
+        if (rectanglePosition.y <= 0){
+            yVelocity = -yVelocity;
+        }
     }   
 
     
