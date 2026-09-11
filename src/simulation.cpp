@@ -75,7 +75,6 @@ void Simulation::updateSimulation(){
 
     relativePositionsMatrix.clear();
 
-
     // Loops for number of particles
 
     for (int i = 0; i < numberOfParticles; i++){

@@ -72,3 +72,6 @@ Testing/
 
 bin/
 
+.ninja_deps
+.ninja_log
+build.ninja_deps

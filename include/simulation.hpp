@@ -12,7 +12,7 @@ class Simulation{
     private:
         const int numberOfParticles;       
         const double dt;
-        const double G = 6.6743e-11;                                                                            // chose not to hard-code
+        const double G = 20;                                                                // universal = 6.6743e-11 but selected one that we can observe for light objects
         std::vector<std::unique_ptr<Particle>> particles;                                           // particles created on heap since n of particles unknown              
         
         // For 3 bodies, each particle needs to know the relative position to the other 2 bodies to calculate the force vectors on it, from Newton's Law of Gravitation.

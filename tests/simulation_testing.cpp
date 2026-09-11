@@ -3,6 +3,7 @@
 #include <iostream>
 #include <chrono>
 #include <limits>
+#include <thread>
 
 int main(){
     int n;
@@ -34,5 +35,6 @@ int main(){
     std::cout << "\033[2J\033[H";
     simulation.printMatrix();
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 }
