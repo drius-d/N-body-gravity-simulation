@@ -137,11 +137,15 @@ void Simulation::updateSimulation(){
     }
 }
 
-void Simulation::printMatrix(){
+const std::vector<std::unique_ptr<Particle>>& Simulation::returnParticles() const{
+    return particles;
+}
+
+void Simulation::printMatrix() const {
     std::cout << "{\n";
-    for (std::vector<std::array<double, 2>>& row : relativePositionsMatrix){
+    for (const std::vector<std::array<double, 2>>& row : relativePositionsMatrix){
         std::cout << "{ ";
-        for (std::array<double, 2>& position : row){
+        for (const std::array<double, 2>& position : row){
             std::cout << "{";
             std::cout << position[0] << ", " << position[1];
             std::cout << "} ";

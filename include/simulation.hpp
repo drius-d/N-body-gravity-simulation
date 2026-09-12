@@ -29,5 +29,7 @@ class Simulation{
 
         void updateSimulation();      // updates position map, forceMap, calls particle update methods
 
-        void printMatrix();
+        const std::vector<std::unique_ptr<Particle>>& returnParticles() const;
+
+        void printMatrix() const;
 };

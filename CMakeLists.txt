@@ -60,6 +60,19 @@ target_compile_features(sfml_create_window PRIVATE cxx_std_17)
 
 target_link_libraries(sfml_create_window PRIVATE SFML::Graphics)
 
+add_executable(n_body_simulation
+    src/main.cpp
+    src/particle.cpp 
+    src/simulation.cpp 
+    src/visualiser.cpp 
+)
+
+target_include_directories(n_body_simulation PRIVATE include)
+
+target_compile_features(n_body_simulation PRIVATE cxx_std_17)
+
+target_link_libraries(n_body_simulation PRIVATE SFML::Graphics)
+
 add_custom_command(TARGET sfml_create_window POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:SFML::Graphics>
