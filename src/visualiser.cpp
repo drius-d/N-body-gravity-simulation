@@ -7,26 +7,29 @@
 Visualiser::Visualiser(const Simulation& s, const int fLimit)
 : simulation(s), framerateLimit(fLimit), window(sf::VideoMode({1000, 1000}), "N-Body Simulation") {}
 
-void Visualiser::drawFrame(){
+void Visualiser::drawFrame(const double alpha){
     
-    int xScaler = 10;
-    int yScaler = 10;
+    const double scale = 10.0;
 
-    for (const std::unique_ptr<Particle>& p : simulation.returnParticles()){
-        double particleMass = p->getMass();
-        double k = 0.001;
-        double radius = std::cbrt((particleMass / k));
+    for (int i = 0; i < simulation.returnParticles().size(); i++){
+        const double particleMass = simulation.returnParticles()[i]->getMass();
+        const double radius = simulation.returnParticles()[i]->getRadius();
 
-        std::array<double, 2> position = p->getPosition(); 
+        const auto& p = simulation.returnParticles()[i];
+        const std::array<double, 2>& previousPosition = simulation.returnPreviousPositions()[i];
+        const std::array<double, 2>& currentPosition = p->getPosition();
+
         sf::Vector2f screenPosition;
 
-        screenPosition.x = position[0] * xScaler;
-        screenPosition.y = position[1] * yScaler;
+        screenPosition.x = (previousPosition[0] + alpha * (currentPosition[0] - previousPosition[0])) * scale;
+        screenPosition.y = (previousPosition[1] + alpha * (currentPosition[1] - previousPosition[1])) * scale;
+        const double screenRadius = radius * scale;
 
-        sf::CircleShape circle(radius);
+        sf::CircleShape circle(radius * scale);
         circle.setPosition(screenPosition);
 
         window.draw(circle);
+
     }
 }
 

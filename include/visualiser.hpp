@@ -1,6 +1,7 @@
 #pragma one
 #include <simulation.hpp>
 #include <SFML/Graphics.hpp>
+#include <vector>
 
 class Visualiser{
     private:
@@ -11,7 +12,7 @@ class Visualiser{
     public:
         Visualiser(const Simulation& simulation, const int framerateLimit);
 
-        void drawFrame();
+        void drawFrame(const double alpha);
 
         sf::RenderWindow& returnWindow();
 };

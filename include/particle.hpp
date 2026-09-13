@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <cmath>
 
 // particles generated in n-body collision belong to Particle and this will store their mass, position, velocity, and acceleration
 // Simulation is currently 2D so all vectors are 2D
@@ -7,6 +8,8 @@
 class Particle{
     private:
         double mass;
+        double k = 50.0;                        // constant of proportionality between radius^3 and m 
+        double radius = std::cbrt((mass / k));
         std::array<double, 2> position;       // stores x, y com    ponents
         std::array<double, 2> velocity;       // stores x, y components
         std::array<double, 2> acceleration;       // stores x, y components
@@ -32,7 +35,15 @@ class Particle{
 
         void updatePosition(const std::array<double, 2>& velocity, const double dt);
 
-        std::array<double, 2> getPosition() const;
+        std::array<double, 2>& getPosition();
+
+        const std::array<double, 2>& getPosition() const;
 
         double getMass() const;
+
+        double getRadius() const;
+
+        std::array<double, 2>& getVelocity();
+
+        const std::array<double, 2>& getVelocity() const;
     };

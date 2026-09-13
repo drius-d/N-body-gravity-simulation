@@ -37,15 +37,17 @@ int main(){
         auto currentTime = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsedTime = currentTime - previousTime;
         previousTime = currentTime;
-
         accumulator += elapsedTime.count();
+
         while (accumulator >= dt){
             simulation.updateSimulation();
             accumulator -= dt;
         }
 
-        visualiser.drawFrame();
-        
+        double alpha = accumulator / dt;
+        visualiser.drawFrame(alpha);
         window.display();
     }
 }
+
+

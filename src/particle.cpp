@@ -27,10 +27,26 @@ void Particle::updatePosition(const std::array<double, 2>& velocity, const doubl
     }    
 }
 
-std::array<double, 2> Particle::getPosition() const{
+std::array<double, 2>& Particle::getPosition(){
+    return position;
+}
+
+const std::array<double, 2>& Particle::getPosition() const{
     return position;
 }
 
 double Particle::getMass() const{
     return mass;
+}
+
+double Particle::getRadius() const{
+    return radius;
+}
+
+std::array<double, 2>& Particle::getVelocity(){
+    return velocity;
+}
+
+const std::array<double, 2>& Particle::getVelocity() const{
+    return velocity;
 }
