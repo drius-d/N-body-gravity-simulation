@@ -12,7 +12,7 @@ class Simulation{
     private:
         const int numberOfParticles;       
         const double dt;
-        const double G = 150;                                                                // universal = 6.6743e-11 but selected one that we can observe for light objects
+        const double G = 300;                                                                // universal = 6.6743e-11 but selected one that we can observe for light objects
         const double e = 1.0;
         std::vector<std::unique_ptr<Particle>> particles;                                           // particles created on heap since n of particles unknown              
         std::vector<std::array<double, 2>> previousPositions;
@@ -35,9 +35,11 @@ class Simulation{
 
         void storePreviousPositions();
 
-        void collisionUpdater();
+        void processCollisions();
 
         void forceUpdater();
+
+        void advanceParticles(double time);
 
         const std::vector<std::unique_ptr<Particle>>& returnParticles() const;
 
