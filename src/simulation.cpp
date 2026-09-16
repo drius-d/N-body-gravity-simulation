@@ -4,6 +4,8 @@
 #include <iostream>
 #include <cmath>
 #include <numeric>
+#include <algorithm>
+#include <cassert>
 
 Simulation::Simulation(const int n, const double dt)
 : numberOfParticles(n), dt(dt) {
@@ -73,7 +75,7 @@ Simulation::Simulation(const int n, const double dt)
         previousPositions.push_back(p->getPosition());
     }
 }
-
+    
 void Simulation::updateSimulation(){
     
     // update RelativePositionsMatrix
@@ -132,8 +134,23 @@ void Simulation::storePreviousPositions(){
 void Simulation::processCollisions(){
     double remainingTime = dt;
 
+    // defensive iteration cap
+
+    int iteractionCount = 0;
+    constexpr int MAX_ITERATIONS = 10000;
+
+    // loop through all collisions 
+
     while (remainingTime > 0){
 
+        if (++iteractionCount > MAX_ITERATIONS){
+
+            std::cout << "Remaining time: " << remainingTime << "\n";
+            break;
+        }
+
+        bool overlapResolved = false;
+            
         // earliestCollisionTime implemented to check when the updater should advance to
 
         double earliestCollisionTime = remainingTime;
@@ -143,19 +160,15 @@ void Simulation::processCollisions(){
         int collisionParticle1 = -1;
         int collisionParticle2 = -1;
 
-        // loops through every i'th particle to check if a collision happens between simulation updates
-        // checks the time of the collision and if its the earliest collision stores that value of time;
-
         for (int i = 0; i < particles.size(); i++){
 
             // obtains particle i with its position and velocity
+
             auto& currentParticle = particles[i];
             std::array<double, 2>& currentParticlePosition = currentParticle->getPosition();
             std::array<double, 2>& currentParticleVelocity = currentParticle->getVelocity();
 
-            // loops through every i+1'th particle to check for collisions with i'th particle
-
-            for (int j = i + 1; j < particles.size(); j++){
+            for (int j = i + 1; j < particles.size(); j++){ 
 
                 // obtain particle i+1 with its position and velocity
                 auto& otherParticle = particles[j];
@@ -165,15 +178,144 @@ void Simulation::processCollisions(){
                 // R is the sum of the radii of the two particles
                 double R = currentParticle->getRadius() + otherParticle->getRadius();
 
+                const double SLOP = R * 1e-6;
+
+                // used for CCD scheduling to prevent a small upwards rounding error from
+                // triggering a collision deteection
+                double R_eff = R - SLOP;
+
                 // r is the distance between the centre of the particles
                 std::array<double, 2> r;
                 r[0] = otherParticlePosition[0] - currentParticlePosition[0];
                 r[1] = otherParticlePosition[1] - currentParticlePosition[1];
-
+                
                 // v is the relative velocity of the two particles
                 std::array<double, 2> v;
                 v[0] = otherParticleVelocity[0] - currentParticleVelocity[0];
                 v[1] = otherParticleVelocity[1] - currentParticleVelocity[1];
+
+                double distance = std::sqrt(r[0]*r[0] + r[1]*r[1]);
+
+                // old code detected penetration against R_eff and then corrected 
+                // position to R_eff. but any small rounding error could flip the position
+                // back into the overlap zone. the code still reruns again because it thinks
+                // its just corrected an overlap but it hasn't. it detects the exact same overlap
+                // it tried to correct but this time at a tiny penetration. it tries to do a correction
+                // smaller than the penetration which at certain distances can register as a zero 
+                // correction leading to infinite loop. 
+                // to fix this we detected penetration against actual R and then corrected to
+                // R + SLOP/2 to prevent rounding us back into overlap.
+                double truePenetration = R - distance;
+
+                // checks if particles already overlapping beyond the allowed slop
+                if (truePenetration > SLOP){
+
+                    // change this later
+
+                    if (distance == 0){     
+                        continue;
+                    }
+
+                    // calculating normal unit vector
+                    std::array<double, 2> normal;
+                    normal[0] = r[0] / distance;
+                    normal[1] = r[1] / distance;
+
+                    // retrieving velocities
+                    std::array<double, 2> vel1 = currentParticle->getVelocity();
+                    std::array<double, 2> vel2 = otherParticle->getVelocity();
+
+                    // retrieving masses
+
+                    double m1 = currentParticle->getMass();
+                    double m2 = otherParticle->getMass();
+
+                    // getting u1 and u2
+
+                    double u1 = std::inner_product(vel1.begin(), vel1.end(), normal.begin(), 0.0);
+                    double u2 = std::inner_product(vel2.begin(), vel2.end(), normal.begin(), 0.0);
+
+                    // working out velocity epsilons
+                    // these are useful to prevent small rounding errors in velocity from triggering a kick
+                    // floating point floor: epsilon_fp = k_fp * u * v_esc, where u = 2.22e-16 (machine epsilon for double) and v_esc is the escape velocity at contact
+
+                    double k_fp = 50;
+                    double u = 2.22e-16;
+                    double v_esc = std::sqrt((2 * G * (m1 + m2)) / R);
+
+                    double epsilon_fp = k_fp * u * v_esc;
+
+                    // gravity's own per step kick: epsilon_g = k_grav * a_contact * dt
+
+                    double k_grav = 3;
+                    double a_contact = (G * (m1 + m2)) / (R * R);
+                    
+                    double epsilon_g = k_grav * a_contact * remainingTime;
+
+                    // physical floor: small fraction of escape velocity epsilon_phys = f * v_esc
+
+                    double f = 1e-3;
+                    double epsilon_phys = f * v_esc;
+
+                    double epsilon = std::max({epsilon_fp, epsilon_g, epsilon_phys});
+
+                    // resolving overlap by moving the particles apart, weighted by mass of particle.
+                    // target leaving HALF a slop's worth of residual penetration rather than zero
+
+                    double correctionAmount = truePenetration - (SLOP / 2.0);
+
+                    if (correctionAmount > 0){
+                        double currentPenetration = (m2 * correctionAmount) / (m1 + m2);
+                        double otherPenetration = (m1 * correctionAmount) / (m1 + m2);
+
+                        currentParticlePosition[0] -= normal[0] * currentPenetration;
+                        currentParticlePosition[1] -= normal[1] * currentPenetration;
+
+                        otherParticlePosition[0] += normal[0] * otherPenetration;
+                        otherParticlePosition[1] += normal[1] * otherPenetration;
+                    }
+
+                    // epsilon gate here to differentiate between a "resting contact velocity"
+                    // and a genuine collision velocity
+                    if (u1 - u2 > epsilon){
+                        double c1 = m1*u1 + m2*u2;
+                        double c2 = e * (u1 - u2);
+
+                        std::array<double, 2> matrixValues = solve2x2Matrix(m1, m2, -1.0, 1.0, c1, c2);
+
+                        double v1 = matrixValues[0];
+                        double v2 = matrixValues[1];
+
+                        currentParticleVelocity[0] += (v1 - u1) * normal[0];
+                        currentParticleVelocity[1] += (v1 - u1) * normal[1];
+
+                        otherParticleVelocity[0] += (v2 - u2) * normal[0];
+                        otherParticleVelocity[1] += (v2 - u2) * normal[1];
+                    }
+
+                    // if its not registered as a genuine collision velocity we provide a smaller kick
+                    // not a full restitution bounce
+                    else if (u1 - u2 > 0){
+
+                        double c1 = m1*u1 + m2*u2;
+                        double c2 = 0.0;
+
+                        std::array<double, 2> matrixValues = solve2x2Matrix(m1, m2, -1.0, 1.0, c1, c2);
+
+                        double v1 = matrixValues[0];
+                        double v2 = matrixValues[1];
+
+                        currentParticleVelocity[0] += (v1 - u1) * normal[0];
+                        currentParticleVelocity[1] += (v1 - u1) * normal[1];
+
+                        otherParticleVelocity[0] += (v2 - u2) * normal[0];
+                        otherParticleVelocity[1] += (v2 - u2) * normal[1];
+                    }
+
+                    overlapResolved = true;
+
+                    break;
+                }
 
                 // some complicated maths: basically using some geometry you can determine that
                 // the equation for the time of collision for any two particles is given by a quadratic
@@ -182,11 +324,11 @@ void Simulation::processCollisions(){
 
                 double a = std::inner_product(v.begin(), v.end(), v.begin(), 0.0);
                 double b = 2 * std::inner_product(r.begin(), r.end(), v.begin(), 0.0);
-                double c = std::inner_product(r.begin(), r.end(), r.begin(), 0.0) - R*R;
-
+                double c = std::inner_product(r.begin(), r.end(), r.begin(), 0.0) - R_eff * R_eff;
+                
                 double discriminant = b*b - 4 * a * c;
 
-                // checks to see if any illegal maths happens i.e. division by 0 and imaginary numbers
+                // checks for any illegal maths i.e. division by 0 and imaginary numbers
                 if (a == 0){
                     continue;
                 }
@@ -217,6 +359,19 @@ void Simulation::processCollisions(){
                     collisionParticle2 = j;
                 }
             }
+
+            // overlap found so we need to restart the process and stop searching other pairs
+            if (overlapResolved){
+                break;
+            }
+        }
+
+        
+
+        if (overlapResolved){
+            // particles have changed positions so we should start from scratch
+
+            continue;
         }
 
         // if no collision then update to remaining time and exit loop
@@ -251,15 +406,15 @@ void Simulation::processCollisions(){
         // calculates distance between centres
         double distance = std::sqrt(relPosition[0] * relPosition[0] + relPosition[1] * relPosition[1]);
 
-        // check distance is 0 and skips to avoid division by 0 error
+        // only performs collision resolution if distance non-zero
 
         if (distance != 0){
             
-            // calculates unit vector pointing between particle centres
+            // calculates normal pointing between particle centres
 
-            std::array<double, 2> unitVector;
-            unitVector[0] = relPosition[0] / distance;
-            unitVector[1] = relPosition[1] / distance;
+            std::array<double, 2> normal;
+            normal[0] = relPosition[0] / distance;
+            normal[1] = relPosition[1] / distance;
 
             // gets particle masses and velocities
 
@@ -268,11 +423,11 @@ void Simulation::processCollisions(){
             std::array<double, 2>& currentParticleVelocity = pParticle->getVelocity();
             std::array<double, 2>& otherParticleVelocity = pOther->getVelocity();
 
-            // calculates component of velocity for both particles along unit vector using inner product
+            // calculates component of velocity for both particles along normal using inner product
 
-            double u1 = std::inner_product(currentParticleVelocity.begin(), currentParticleVelocity.end(), unitVector.begin(), 0.0);
-            double u2 = std::inner_product(otherParticleVelocity.begin(), otherParticleVelocity.end(), unitVector.begin(), 0.0);
-            
+            double u1 = std::inner_product(currentParticleVelocity.begin(), currentParticleVelocity.end(), normal.begin(), 0.0);
+            double u2 = std::inner_product(otherParticleVelocity.begin(), otherParticleVelocity.end(), normal.begin(), 0.0);
+
             // simultaneous equations consist of conservation of momentum and coefficient of restitution formula
             // c1 and c2 are to simplify the numerical values on the RHS
 
@@ -289,21 +444,16 @@ void Simulation::processCollisions(){
             double v1 = matrixValues[0];
             double v2 = matrixValues[1];
 
-            // testing 
-
-            std::cout << "distance: " << distance
-            << " sum radii: " << pParticle->getRadius() + pOther->getRadius()
-            << '\n';
-
             // updates the particle velocities with the change in velocity along the line of collision
+
+            currentParticleVelocity[0] += (v1 - u1) * normal[0];
+            currentParticleVelocity[1] += (v1 - u1) * normal[1];
             
-            currentParticleVelocity[0] += (v1 - u1) * unitVector[0];
-            currentParticleVelocity[1] += (v1 - u1) * unitVector[1];
-            
-            otherParticleVelocity[0] += (v2 - u2) * unitVector[0];
-            otherParticleVelocity[1] += (v2 - u2) * unitVector[1];
+            otherParticleVelocity[0] += (v2 - u2) * normal[0];
+            otherParticleVelocity[1] += (v2 - u2) * normal[1];
+
         }
-        remainingTime -= earliestCollisionTime; 
+        remainingTime -= earliestCollisionTime;
     }
 }
 
