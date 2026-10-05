@@ -366,8 +366,6 @@ void Simulation::processCollisions(){
             }
         }
 
-        
-
         if (overlapResolved){
             // particles have changed positions so we should start from scratch
 
